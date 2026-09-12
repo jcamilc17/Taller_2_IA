@@ -88,8 +88,8 @@ def cooling_schedule(initial_temperature: float, cooling_rate: float, iteration:
 
     Esta función se invoca desde simulated_annealing en cada iteración.
     """
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 2: implemente cooling_schedule")
+    # Calcula y retorna la temperatura actual utilizando el esquema de enfriamiento geométrico
+    return initial_temperature * (cooling_rate ** iteration)
 
 
 def simulated_annealing(
@@ -119,8 +119,58 @@ def simulated_annealing(
     rng = rng or random.Random()
     minimum_temperature = 1e-9
 
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 2: implemente simulated_annealing")
+    current = initial_configuration
+    current_score = configuration_score(problem, current)
+    evaluations = 1
+
+    best = current
+    best_score = current_score
+
+    history = [current]
+    score_history = [current_score]
+    iterations = 0
+
+    for iteration in range(max_iterations):
+        # Obtiene la temperatura correspondiente a la iteración actual y verifica la condición de parada
+        temperature = cooling_schedule(initial_temperature, cooling_rate, iteration)
+        if temperature <= minimum_temperature:
+            break
+
+        neighbors = problem.neighbors(current)
+        if not neighbors:
+            break
+
+        # Selecciona un vecino de forma aleatoria mediante el generador provisto y evalúa su puntaje
+        candidate = rng.choice(neighbors)
+        candidate_score = configuration_score(problem, candidate)
+        evaluations += 1
+
+        # Calcula la variación en el puntaje y determina si se acepta el candidato (mejora o probabilidad de aceptación)
+        delta = candidate_score - current_score
+        accept = delta > 0 or rng.random() < math.exp(delta / temperature)
+
+        # Actualiza el estado actual si el candidato fue aceptado
+        if accept:
+            current = candidate
+            current_score = candidate_score
+
+        iterations += 1
+        history.append(current)
+        score_history.append(current_score)
+
+        # Actualiza el registro histórico del mejor estado global encontrado hasta el momento
+        if current_score > best_score:
+            best = current
+            best_score = current_score
+
+    return OptimizationResult(
+        best_configuration=best,
+        best_score=best_score,
+        evaluations=evaluations,
+        iterations=iterations,
+        history=history,
+        score_history=score_history,
+    )
 
 
 def one_point_crossover(
