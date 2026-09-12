@@ -15,9 +15,9 @@ def configuration_score(
     - Use problem.score_components(configuration); ya retorna cobertura,
       redundancia y exposición en ese orden.
     """
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 1: implemente configuration_score")
-
+    # Desempaqueta los tres componentes principales del puntaje provistos por el problema
+    coverage, redundancy, exposure = problem.score_components(configuration)
+    return coverage - redundancy - exposure
 
 def hill_climbing(
     problem: SmartGridOptimizationProblem,
@@ -38,8 +38,48 @@ def hill_climbing(
     - Inicialice los historiales con la configuración inicial y agregue solo las
       mejoras aceptadas antes de retornar el OptimizationResult.
     """
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 1: implemente hill_climbing")
+    current = initial_configuration
+    current_score = configuration_score(problem, current)
+    evaluations = 1
+    iterations = 0
+    history = [current]
+    score_history = [current_score]
+    
+    while iterations < max_iterations:
+        neighbors = problem.neighbors(current)
+        best_neighbor = None
+        best_neighbor_score = current_score  
+
+        # Explora la vecindad para encontrar un estado que mejore estrictamente al actual
+        for neighbor in neighbors:
+            neighbor_score = configuration_score(problem, neighbor)
+            evaluations += 1
+            
+            # Actualiza el mejor candidato si el puntaje es estrictamente superior.
+            # Al recorrer en orden, se preserva automáticamente la regla de desempate.
+            if neighbor_score > best_neighbor_score:
+                best_neighbor = neighbor
+                best_neighbor_score = neighbor_score
+
+        # Condición de parada: si ningún vecino supera al estado actual, se alcanzó un óptimo local
+        if best_neighbor is None:
+            break  
+
+        # Avanza hacia el mejor vecino encontrado y registra la evolución del proceso
+        current = best_neighbor
+        current_score = best_neighbor_score
+        iterations += 1
+        history.append(current)
+        score_history.append(current_score)
+    
+    return OptimizationResult(
+        best_configuration=current,
+        best_score=current_score,
+        evaluations=evaluations,
+        iterations=iterations,
+        history=history,
+        score_history=score_history,
+    )
 
 
 def cooling_schedule(initial_temperature: float, cooling_rate: float, iteration: int) -> float:
