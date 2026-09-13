@@ -54,10 +54,6 @@ def evaluation_function(state: GameState) -> float:
     if math.isinf(capture_distance):
         capture_distance = layout.width + layout.height
 
-    # Riesgo inmediato: solo penaliza cuando el intruso está a 0 o 1 casillas
-    # (amenaza real de captura en el próximo turno). A distancias mayores el
-    # intruso no condiciona la ruta del defensor, evitando que "alejarse" del
-    # intruso opaque el objetivo de avanzar hacia los terminales pendientes.
     if capture_distance <= 1:
         immediate_risk = 30.0 * (2 - capture_distance)
     else:
