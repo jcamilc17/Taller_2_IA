@@ -61,5 +61,42 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - En MAX actualice alpha y corte si valor >= beta; en MIN actualice beta
           y corte si valor <= alpha.
         """
-        # TODO: Add your code here
-        raise NotImplementedError("Punto 5: implemente AlphaBetaAgent.get_action")
+        self.nodes_evaluated = 0
+        num_agents = state.get_num_agents()
+
+        def value(node: GameState, agent_index: int, depth_left: int, alpha: float, beta: float) -> float:
+            self.nodes_evaluated += 1
+            if node.is_win() or node.is_lose() or depth_left == 0:
+                return evaluation_function(node)
+            next_agent = (agent_index + 1) % num_agents
+            if agent_index == 0:
+                best = float("-inf")
+                for action in node.get_legal_actions(agent_index):
+                    successor = node.generate_successor(agent_index, action)
+                    best = max(best, value(successor, next_agent, depth_left - 1, alpha, beta))
+                    if best >= beta:
+                        return best
+                    alpha = max(alpha, best)
+                return best
+            best = float("inf")
+            for action in node.get_legal_actions(agent_index):
+                successor = node.generate_successor(agent_index, action)
+                best = min(best, value(successor, next_agent, depth_left - 1, alpha, beta))
+                if best <= alpha:
+                    return best
+                beta = min(beta, best)
+            return best
+
+        self.nodes_evaluated += 1
+        best_action: str | None = None
+        best_value = float("-inf")
+        alpha = float("-inf")
+        beta = float("inf")
+        for action in state.get_legal_actions(0):
+            successor = state.generate_successor(0, action)
+            action_value = value(successor, 1 % num_agents, self.depth - 1, alpha, beta)
+            if action_value > best_value:
+                best_value = action_value
+                best_action = action
+            alpha = max(alpha, best_value)
+        return best_action

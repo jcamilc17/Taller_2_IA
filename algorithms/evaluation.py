@@ -38,5 +38,37 @@ def evaluation_function(state: GameState) -> float:
     if state.is_win() or state.is_lose():
         return base_evaluation_function(state)
 
-    # TODO: Add your code here
-    return base_evaluation_function(state)
+    layout = state.layout
+    defender = state.defender_position
+    intruder = state.intruder_position
+    pending = state.pending_terminals
+
+    if pending:
+        goal_distance = min(layout.distance(defender, terminal) for terminal in pending)
+        if math.isinf(goal_distance):
+            goal_distance = layout.width + layout.height
+    else:
+        goal_distance = 0.0
+
+    capture_distance = layout.distance(defender, intruder)
+    if math.isinf(capture_distance):
+        capture_distance = layout.width + layout.height
+
+    # Riesgo inmediato: solo penaliza cuando el intruso está a 0 o 1 casillas
+    # (amenaza real de captura en el próximo turno). A distancias mayores el
+    # intruso no condiciona la ruta del defensor, evitando que "alejarse" del
+    # intruso opaque el objetivo de avanzar hacia los terminales pendientes.
+    if capture_distance <= 1:
+        immediate_risk = 30.0 * (2 - capture_distance)
+    else:
+        immediate_risk = 0.0
+
+    mobility = len(state.get_legal_actions(0))
+
+    value = state.get_score()
+    value -= 8.0 * goal_distance
+    value -= 60.0 * len(pending)
+    value -= immediate_risk
+    value += 0.5 * mobility
+
+    return max(-999.0, min(999.0, value))
